@@ -6,7 +6,7 @@ viel übrig, leer heißt Limit erreicht.
 
 ![Vorschau](docs/preview.svg)
 
-> **Status:** frühe Version. Gebaut mit [Avalonia UI](https://avaloniaui.net/) (C#/.NET 11),
+> **Status:** frühe Version. Gebaut mit [Avalonia UI](https://avaloniaui.net/) (C#/.NET 8),
 > zuerst für macOS, der Code ist so aufgebaut, dass Windows nur kleine Ergänzungen braucht.
 > Das Bild oben ist ein Mockup, ein echter Screenshot folgt.
 
@@ -76,7 +76,7 @@ Claude Code ──Statusline-JSON──▶ statusline-save.sh ──▶ ~/.claud
 
 ## Entwickeln
 
-Voraussetzung: .NET 11 SDK, z. B. mit JetBrains Rider.
+Voraussetzung: .NET 8 SDK (oder neuer), z. B. mit JetBrains Rider.
 
 ```bash
 dotnet build ClaudeStats.sln

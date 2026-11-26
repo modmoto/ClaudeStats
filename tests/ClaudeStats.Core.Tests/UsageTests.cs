@@ -11,10 +11,10 @@ public class UsageTests
     public void Parses_unix_seconds()
     {
         var reset = Now.AddHours(2).ToUnixTimeSeconds();
-        var json = """
-            {"rate_limits":{"five_hour":{"used_percentage":32,"resets_at":RESET},
-                            "seven_day":{"used_percentage":81.5,"resets_at":RESET}}}
-            """.Replace("RESET", reset.ToString());
+        var json = $$"""
+            {"rate_limits":{"five_hour":{"used_percentage":32,"resets_at":{{reset}}},
+                            "seven_day":{"used_percentage":81.5,"resets_at":{{reset}}}}}
+            """;
 
         var snapshot = UsageParser.Parse(json, Now);
 
