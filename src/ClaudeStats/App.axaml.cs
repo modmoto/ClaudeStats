@@ -227,5 +227,12 @@ public class App : Application
 
     // Disabled items are drawn grey by macOS. The two limit lines are kept enabled (they do nothing
     // when clicked) so they show in normal text color; status and age stay grey as secondary info.
-    private static NativeMenuItem Info(string text, bool enabled = false) => new(text) { IsEnabled = enabled };
+    private static NativeMenuItem Info(string text, bool enabled = false)
+    {
+        var item = new NativeMenuItem(text) { IsEnabled = enabled };
+        // macOS also draws items grey when they have no action at all, so give enabled ones a no-op.
+        if (enabled)
+            item.Click += (_, _) => { };
+        return item;
+    }
 }
