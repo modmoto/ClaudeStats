@@ -184,8 +184,8 @@ public class App : Application
 
         items = new MenuItems
         {
-            FiveHour = Info("5-Stunden-Limit: …"),
-            Week = Info("Wochenlimit: …"),
+            FiveHour = Info("5-Stunden-Limit: …", enabled: true),
+            Week = Info("Wochenlimit: …", enabled: true),
             Status = Info(" "),
             Age = Info(" "),
         };
@@ -218,10 +218,6 @@ public class App : Application
             items.Autostart = autostart;
         }
 
-        var log = new NativeMenuItem("Log öffnen");
-        log.Click += (_, _) => OpenLog();
-        menu.Add(log);
-
         var quit = new NativeMenuItem("Beenden");
         quit.Click += (_, _) => desktop.Shutdown();
         menu.Add(quit);
@@ -229,19 +225,7 @@ public class App : Application
         return menu;
     }
 
-    private static void OpenLog()
-    {
-        try
-        {
-            Log.Info("Log opened");
-            var opener = OperatingSystem.IsMacOS() ? "open" : OperatingSystem.IsWindows() ? "notepad" : "xdg-open";
-            System.Diagnostics.Process.Start(opener, Log.FilePath);
-        }
-        catch (Exception e)
-        {
-            Log.Error("Could not open log", e);
-        }
-    }
-
-    private static NativeMenuItem Info(string text) => new(text) { IsEnabled = false };
+    // Disabled items are drawn grey by macOS. The two limit lines are kept enabled (they do nothing
+    // when clicked) so they show in normal text color; status and age stay grey as secondary info.
+    private static NativeMenuItem Info(string text, bool enabled = false) => new(text) { IsEnabled = enabled };
 }

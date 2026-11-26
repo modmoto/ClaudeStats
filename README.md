@@ -63,13 +63,13 @@ open /Applications/ClaudeStats.app
 ```
 
 The app runs without a Dock icon; you only find it in the menu bar. In its menu you can enable
-**Beim Anmelden starten** (start at login), open the log, and quit.
+**Beim Anmelden starten** (start at login) and quit.
 
 ### Icon not visible?
 
 - **Full menu bar / notch:** macOS silently hides menu bar icons that do not fit, especially on
   MacBooks with a notch. Quit a few other menu bar apps, or use a tool like Ice or Bartender.
-- **Log:** `~/Library/Logs/ClaudeStats/ClaudeStats.log` shows whether the tray icon was created
+- **Log:** `~/Library/Logs/ClaudeStats/ClaudeStats.log` (not in the menu; open it in Finder or with `open`) shows whether the tray icon was created
   and what the last fetch returned.
 
 ## Develop
