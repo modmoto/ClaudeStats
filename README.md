@@ -6,7 +6,7 @@ plenty left, empty means the limit is reached.
 
 ![Preview](docs/preview.svg)
 
-Real renderings of the icon on a dark and a light menu bar (no data, 68 %/19 %, 100 %/5 %, 0 %/50 %, 94 %/8 % left):
+Real renderings of one ring icon on a dark (top) and a light (bottom) menu bar, from "no data" through 100 % to 0 % left. The app shows two of them next to each other: 5-hour (left) and weekly (right):
 
 ![Icon states](docs/icon-states.png)
 

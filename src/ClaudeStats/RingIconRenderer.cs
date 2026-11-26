@@ -8,33 +8,32 @@ using ClaudeStats.Core;
 namespace ClaudeStats;
 
 /// <summary>
-/// Draws the tray icon: 5-hour ring on the left, weekly ring on the right.
-/// Each ring counts down and shows the remaining percentage in its center.
+/// Draws one square tray icon: a ring that counts down, with the remaining percentage in its center.
+/// The app shows two of these side by side (5-hour and weekly), because a single wide tray image
+/// gets squeezed and clipped by the macOS menu bar.
 /// </summary>
 public static class RingIconRenderer
 {
-    private const double Width = 46;
-    private const double Height = 22;
+    private const double Size = 22;
 
-    /// <param name="fiveHourRemaining">Remaining percentage (0–100), or null if unknown.</param>
-    /// <param name="weekRemaining">Remaining percentage (0–100), or null if unknown.</param>
-    public static WindowIcon Render(double? fiveHourRemaining, double? weekRemaining)
+    /// <param name="remaining">Remaining percentage (0–100), or null if unknown.</param>
+    public static WindowIcon Render(double? remaining)
     {
         // Encode to PNG and build the icon from that stream. Handing a RenderTargetBitmap directly
         // to the native tray is less reliable than the regular "icon from image file" path.
-        var stream = new MemoryStream(RenderPng(fiveHourRemaining, weekRemaining));
+        var stream = new MemoryStream(RenderPng(remaining));
         return new WindowIcon(stream);
     }
 
-    /// <summary>The icon as PNG bytes (92×44 px, i.e. 2x for Retina).</summary>
-    public static byte[] RenderPng(double? fiveHourRemaining, double? weekRemaining)
+    /// <summary>The icon as PNG bytes (44×44 px, i.e. 2x for Retina).</summary>
+    public static byte[] RenderPng(double? remaining)
     {
-        var visual = new RingsVisual(fiveHourRemaining, weekRemaining) { Width = Width, Height = Height };
-        visual.Measure(new Size(Width, Height));
-        visual.Arrange(new Rect(0, 0, Width, Height));
+        var visual = new RingVisual(remaining) { Width = Size, Height = Size };
+        visual.Measure(new Size(Size, Size));
+        visual.Arrange(new Rect(0, 0, Size, Size));
 
         // 2x for Retina displays; the menu bar scales it down to its height.
-        using var bitmap = new RenderTargetBitmap(new PixelSize((int)Width * 2, (int)Height * 2), new Vector(192, 192));
+        using var bitmap = new RenderTargetBitmap(new PixelSize((int)Size * 2, (int)Size * 2), new Vector(192, 192));
         bitmap.Render(visual);
 
         using var png = new MemoryStream();
@@ -42,7 +41,7 @@ public static class RingIconRenderer
         return png.ToArray();
     }
 
-    private sealed class RingsVisual(double? five, double? week) : Control
+    private sealed class RingVisual(double? remaining) : Control
     {
         private const double Radius = 9;
         private const double Thickness = 2.6;
@@ -52,18 +51,14 @@ public static class RingIconRenderer
 
         public override void Render(DrawingContext context)
         {
-            DrawRing(context, new Point(11, 11), five);
-            DrawRing(context, new Point(35, 11), week);
-        }
+            var center = new Point(Size / 2, Size / 2);
 
-        private static void DrawRing(DrawingContext context, Point center, double? remaining)
-        {
             // Mid grey track: visible on both light and dark menu bars.
             var track = new Pen(new SolidColorBrush(Color.FromArgb(120, 140, 140, 140)), Thickness);
             context.DrawEllipse(null, track, center, Radius, Radius);
 
             var color = ColorFor(UsageLevels.For(remaining));
-            DrawNumber(context, center, remaining, color);
+            DrawNumber(context, center, color);
 
             if (remaining is not { } value)
                 return;
@@ -96,10 +91,10 @@ public static class RingIconRenderer
             context.DrawGeometry(null, pen, geometry);
         }
 
-        private static void DrawNumber(DrawingContext context, Point center, double? remaining, Color color)
+        private void DrawNumber(DrawingContext context, Point center, Color color)
         {
             var text = remaining is { } v ? Math.Round(v).ToString("0", CultureInfo.InvariantCulture) : "–";
-            var size = text.Length >= 3 ? 7.0 : 9.0;
+            var size = text.Length >= 3 ? 7.0 : 9.5;
 
             var formatted = new FormattedText(
                 text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Font, size, new SolidColorBrush(color));
