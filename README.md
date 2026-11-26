@@ -116,6 +116,19 @@ dotnet test tests/ClaudeStats.Core.Tests
 Die Logik steckt bewusst im Core-Projekt. Für Windows muss die App nur ergänzt werden (Autostart,
 Tray-Details), die Berechnung bleibt identisch. Eine GitHub-Action baut auf macOS und Windows.
 
+## Release veröffentlichen
+
+Die Pipeline `.github/workflows/release.yml` testet, baut `ClaudeStats.app` für Apple Silicon und
+Intel auf einem macOS-Runner und legt das GitHub-Release mit beiden Zips und Prüfsummen an.
+Versionen unter 1.0 werden automatisch als Vorabversion markiert.
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+Alternativ auf GitHub unter **Actions → release → Run workflow** den Tag eintragen.
+
 ## Roadmap
 
 - [ ] Erster echter Lauf auf macOS, Screenshot ins README

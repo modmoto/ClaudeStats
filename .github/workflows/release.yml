@@ -1,0 +1,83 @@
+name: release
+
+# Release anlegen:
+#   git tag v0.1.0 && git push origin v0.1.0
+# oder auf GitHub: Actions -> release -> Run workflow (Tag-Name eingeben).
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag für das Release, z. B. v0.1.0'
+        required: true
+        default: 'v0.1.0'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 11.0.x
+      - run: dotnet test tests/ClaudeStats.Core.Tests -c Release
+
+  package:
+    needs: test
+    runs-on: macos-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        rid: [osx-arm64, osx-x64]
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 11.0.x
+      - name: App-Bundle bauen
+        run: |
+          VERSION="${TAG#v}"
+          scripts/package-macos.sh "${{ matrix.rid }}" "$VERSION"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ClaudeStats-${{ matrix.rid }}
+          path: publish/${{ matrix.rid }}/ClaudeStats-*.zip
+          if-no-files-found: error
+
+  release:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: ClaudeStats-*
+          merge-multiple: true
+          path: dist
+      - name: Prüfsummen
+        run: cd dist && sha256sum ClaudeStats-*.zip > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - name: Release erstellen
+        run: |
+          # Versionen unter 1.0 gelten als Vorabversion.
+          PRERELEASE=""
+          case "${TAG#v}" in 0.*|*-*) PRERELEASE="--prerelease" ;; esac
+
+          gh release create "$TAG" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "ClaudeStats ${TAG#v}" \
+            --notes-file packaging/release-notes.md \
+            --generate-notes \
+            $PRERELEASE
