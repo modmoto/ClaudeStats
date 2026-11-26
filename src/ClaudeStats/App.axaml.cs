@@ -22,6 +22,14 @@ public class App : Application
     private DateTimeOffset _nextFetch = DateTimeOffset.MinValue;
     private bool _fetching;
 
+    // The native macOS menu cannot be swapped for a new NativeMenu on every update
+    // ("The menu being updated does not match"), so it is built once and only its items change.
+    private NativeMenuItem? _fiveHourItem;
+    private NativeMenuItem? _weekItem;
+    private NativeMenuItem? _statusItem;
+    private NativeMenuItem? _ageItem;
+    private NativeMenuItem? _autostartItem;
+
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
     public override void OnFrameworkInitializationCompleted()
@@ -29,6 +37,7 @@ public class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             Log.Info($"Starting ClaudeStats on {Environment.OSVersion}, exe {Environment.ProcessPath}");
+            CredentialStore.Log = Log.Info;
 
             // No main window: the app lives only in the menu bar / tray.
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -39,6 +48,7 @@ public class App : Application
                 {
                     Icon = RingIconRenderer.Render(null, null),
                     ToolTipText = "ClaudeStats",
+                    Menu = BuildMenu(desktop),
                     IsVisible = true,
                 };
                 TrayIcon.SetIcons(this, new TrayIcons { _tray });
@@ -88,6 +98,8 @@ public class App : Application
             var wait = result.Status switch
             {
                 FetchStatus.RateLimited => result.RetryAfter is { } r && r > FetchInterval ? r : FetchInterval * 2,
+                // Not logged in / expired: check again soon, the user may be fixing it right now.
+                FetchStatus.NotLoggedIn or FetchStatus.TokenExpired or FetchStatus.Unauthorized => TimeSpan.FromSeconds(30),
                 _ => FetchInterval,
             };
             _nextFetch = DateTimeOffset.UtcNow + wait;
@@ -119,7 +131,20 @@ public class App : Application
             _tray.ToolTipText = five is null && week is null
                 ? "ClaudeStats: " + StatusText()
                 : $"5 h: {FormatOrDash(five)} übrig · Woche: {FormatOrDash(week)} übrig";
-            _tray.Menu = BuildMenu(now);
+
+            _fiveHourItem!.Header = UsageFormatter.Line("5-Stunden-Limit", _snapshot?.FiveHour, now);
+            _weekItem!.Header = UsageFormatter.Line("Wochenlimit", _snapshot?.SevenDay, now);
+
+            var showStatus = _lastResult is { Status: not FetchStatus.Ok };
+            _statusItem!.IsVisible = showStatus;
+            _statusItem.Header = showStatus ? StatusText() : " ";
+
+            var showAge = _snapshot is not null;
+            _ageItem!.IsVisible = showAge;
+            _ageItem.Header = showAge ? $"Stand: {UsageFormatter.Age(now - _snapshot!.UpdatedAt)}" : " ";
+
+            if (_autostartItem is not null)
+                _autostartItem.IsChecked = Autostart.IsEnabled;
         }
         catch (Exception e)
         {
@@ -131,7 +156,7 @@ public class App : Application
     {
         null => "Lade …",
         FetchStatus.Ok => "OK",
-        FetchStatus.NotLoggedIn => "Claude Code nicht angemeldet – im Terminal `claude` starten und einloggen",
+        FetchStatus.NotLoggedIn => "Claude-Code-Login nicht gefunden – siehe Log",
         FetchStatus.TokenExpired => "Login abgelaufen – Claude Code kurz öffnen, dann aktualisieren",
         FetchStatus.Unauthorized => "Zugriff abgelehnt – in Claude Code neu einloggen (/login)",
         FetchStatus.RateLimited => "Zu viele Anfragen – nächster Versuch später",
@@ -141,18 +166,20 @@ public class App : Application
     private static string FormatOrDash(double? value) =>
         value is { } v ? UsageFormatter.Percent(v) : "–";
 
-    private NativeMenu BuildMenu(DateTimeOffset now)
+    private NativeMenu BuildMenu(IClassicDesktopStyleApplicationLifetime desktop)
     {
         var menu = new NativeMenu();
 
-        menu.Add(Info(UsageFormatter.Line("5-Stunden-Limit", _snapshot?.FiveHour, now)));
-        menu.Add(Info(UsageFormatter.Line("Wochenlimit", _snapshot?.SevenDay, now)));
-        menu.Add(new NativeMenuItemSeparator());
+        _fiveHourItem = Info("5-Stunden-Limit: …");
+        _weekItem = Info("Wochenlimit: …");
+        _statusItem = Info(" ");
+        _ageItem = Info(" ");
 
-        if (_lastResult is { Status: not FetchStatus.Ok })
-            menu.Add(Info(StatusText()));
-        if (_snapshot is not null)
-            menu.Add(Info($"Stand: {UsageFormatter.Age(now - _snapshot.UpdatedAt)}"));
+        menu.Add(_fiveHourItem);
+        menu.Add(_weekItem);
+        menu.Add(new NativeMenuItemSeparator());
+        menu.Add(_statusItem);
+        menu.Add(_ageItem);
         menu.Add(new NativeMenuItemSeparator());
 
         var refresh = new NativeMenuItem("Aktualisieren");
@@ -161,18 +188,18 @@ public class App : Application
 
         if (Autostart.IsSupported)
         {
-            var autostart = new NativeMenuItem("Beim Anmelden starten")
+            _autostartItem = new NativeMenuItem("Beim Anmelden starten")
             {
                 ToggleType = NativeMenuItemToggleType.CheckBox,
                 IsChecked = Autostart.IsEnabled,
             };
-            autostart.Click += (_, _) =>
+            _autostartItem.Click += (_, _) =>
             {
                 try { Autostart.SetEnabled(!Autostart.IsEnabled); }
                 catch (Exception e) { Log.Error("Autostart toggle failed", e); }
                 Redraw();
             };
-            menu.Add(autostart);
+            menu.Add(_autostartItem);
         }
 
         var log = new NativeMenuItem("Log öffnen");
@@ -180,8 +207,7 @@ public class App : Application
         menu.Add(log);
 
         var quit = new NativeMenuItem("Beenden");
-        quit.Click += (_, _) =>
-            (ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Shutdown();
+        quit.Click += (_, _) => desktop.Shutdown();
         menu.Add(quit);
 
         return menu;
