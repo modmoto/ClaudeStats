@@ -1,12 +1,12 @@
 # ClaudeStats
 
-A menu bar / tray indicator for your **Claude usage limits**. Two rings show how much of your
-**5-hour limit** (left) and your **weekly limit** (right) is left. They count down: full means
+A menu bar / tray indicator for your **Claude usage limits**. Two bars in one small icon show how much of your
+**5-hour limit** (top) and your **weekly limit** (bottom) is left. They count down: full means
 plenty left, empty means the limit is reached.
 
 ![Preview](docs/preview.svg)
 
-Real renderings of one ring icon on a dark (top) and a light (bottom) menu bar, from "no data" through 100 % to 0 % left. The app shows two of them next to each other: 5-hour (left) and weekly (right):
+Real renderings of the icon on a dark (top row) and a light (bottom row) menu bar: no data, 100 %/100 %, 73 %/95 %, 68 %/19 %, 50 %/8 %, 19 %/2 %, 0 %/0 % left (top bar = 5 hours, bottom bar = week):
 
 ![Icon states](docs/icon-states.png)
 
@@ -39,7 +39,7 @@ Claude Code login ──▶ ClaudeStats ──GET api.anthropic.com/api/oauth/us
 - ClaudeStats does not refresh the login itself (that could log Claude Code out). If the token
   has expired because Claude Code was not used for a while, the menu says so; opening Claude Code
   once refreshes it.
-- There is no daily limit in this data, so there are only two rings: 5 hours and week.
+- There is no daily limit in this data, so there are only two bars: 5 hours and week.
 
 ## Install (macOS)
 
@@ -108,7 +108,7 @@ Alternatively, go to **Actions → release → Run workflow** on GitHub and ente
 - [x] Live data from Anthropic instead of the status line
 - [x] Start at login (macOS)
 - [ ] Real screenshot in the README
-- [ ] Percentage number next to or inside the rings
+- [ ] Optional percentage numbers
 - [ ] Popover window instead of a plain menu
 - [ ] Windows test, autostart and installer
 - [ ] English UI texts

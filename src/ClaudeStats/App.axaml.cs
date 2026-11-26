@@ -16,17 +16,15 @@ public class App : Application
 
     private readonly UsageClient _client = new(new HttpClient { Timeout = TimeSpan.FromSeconds(15) });
 
-    private TrayIcon? _fiveTray;
-    private TrayIcon? _weekTray;
-    private MenuItems? _fiveMenu;
-    private MenuItems? _weekMenu;
+    private TrayIcon? _tray;
+    private MenuItems? _menu;
     private UsageSnapshot? _snapshot;
     private FetchResult? _lastResult;
     private DateTimeOffset _nextFetch = DateTimeOffset.MinValue;
     private bool _fetching;
 
     // The native macOS menu cannot be swapped for a new NativeMenu on every update
-    // ("The menu being updated does not match"), so each menu is built once and only its items change.
+    // ("The menu being updated does not match"), so the menu is built once and only its items change.
     private sealed class MenuItems
     {
         public required NativeMenuItem FiveHour { get; init; }
@@ -50,33 +48,22 @@ public class App : Application
 
             try
             {
-                // Two square icons instead of one wide one: the macOS menu bar squeezes and clips wide images.
-                // New status items appear to the left of existing ones, so the weekly ring is added first
-                // to end up on the right of the 5-hour ring.
-                _weekTray = new TrayIcon
+                // One square icon with two bars: the macOS menu bar squeezes and clips wide images.
+                _tray = new TrayIcon
                 {
-                    Icon = RingIconRenderer.Render(null),
+                    Icon = RingIconRenderer.Render(null, null),
                     ToolTipText = "ClaudeStats",
-                    Menu = BuildMenu(desktop, out var weekMenu),
+                    Menu = BuildMenu(desktop, out var menu),
                     IsVisible = true,
                 };
-                _weekMenu = weekMenu;
+                _menu = menu;
 
-                _fiveTray = new TrayIcon
-                {
-                    Icon = RingIconRenderer.Render(null),
-                    ToolTipText = "ClaudeStats",
-                    Menu = BuildMenu(desktop, out var fiveMenu),
-                    IsVisible = true,
-                };
-                _fiveMenu = fiveMenu;
-
-                TrayIcon.SetIcons(this, new TrayIcons { _weekTray, _fiveTray });
-                Log.Info("Tray icons created");
+                TrayIcon.SetIcons(this, new TrayIcons { _tray });
+                Log.Info("Tray icon created");
             }
             catch (Exception e)
             {
-                Log.Error("Could not create tray icons", e);
+                Log.Error("Could not create tray icon", e);
             }
 
             Redraw();
@@ -138,7 +125,7 @@ public class App : Application
 
     private void Redraw()
     {
-        if (_fiveTray is null || _weekTray is null || _fiveMenu is null || _weekMenu is null)
+        if (_tray is null || _menu is null)
             return;
 
         try
@@ -147,13 +134,12 @@ public class App : Application
             var five = _snapshot?.FiveHour?.RemainingPercentage(now);
             var week = _snapshot?.SevenDay?.RemainingPercentage(now);
 
-            _fiveTray.Icon = RingIconRenderer.Render(five);
-            _weekTray.Icon = RingIconRenderer.Render(week);
-            _fiveTray.ToolTipText = five is null ? "ClaudeStats: " + StatusText() : $"5-Stunden-Limit: {FormatOrDash(five)} übrig";
-            _weekTray.ToolTipText = week is null ? "ClaudeStats: " + StatusText() : $"Wochenlimit: {FormatOrDash(week)} übrig";
+            _tray.Icon = RingIconRenderer.Render(five, week);
+            _tray.ToolTipText = five is null && week is null
+                ? "ClaudeStats: " + StatusText()
+                : $"5 h: {FormatOrDash(five)} übrig · Woche: {FormatOrDash(week)} übrig";
 
-            UpdateMenu(_fiveMenu, now);
-            UpdateMenu(_weekMenu, now);
+            UpdateMenu(_menu, now);
         }
         catch (Exception e)
         {
