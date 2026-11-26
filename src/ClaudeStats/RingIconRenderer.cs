@@ -1,3 +1,4 @@
+using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
@@ -6,10 +7,13 @@ using ClaudeStats.Core;
 
 namespace ClaudeStats;
 
-/// <summary>Draws the tray icon: 5-hour ring on the left, weekly ring on the right.</summary>
+/// <summary>
+/// Draws the tray icon: 5-hour ring on the left, weekly ring on the right.
+/// Each ring counts down and shows the remaining percentage in its center.
+/// </summary>
 public static class RingIconRenderer
 {
-    private const double Width = 40;
+    private const double Width = 46;
     private const double Height = 22;
 
     /// <param name="fiveHourRemaining">Remaining percentage (0–100), or null if unknown.</param>
@@ -22,7 +26,7 @@ public static class RingIconRenderer
         return new WindowIcon(stream);
     }
 
-    /// <summary>The icon as PNG bytes (80×44 px, i.e. 2x for Retina).</summary>
+    /// <summary>The icon as PNG bytes (92×44 px, i.e. 2x for Retina).</summary>
     public static byte[] RenderPng(double? fiveHourRemaining, double? weekRemaining)
     {
         var visual = new RingsVisual(fiveHourRemaining, weekRemaining) { Width = Width, Height = Height };
@@ -40,20 +44,26 @@ public static class RingIconRenderer
 
     private sealed class RingsVisual(double? five, double? week) : Control
     {
-        private const double Radius = 7.5;
-        private const double Thickness = 3;
+        private const double Radius = 9;
+        private const double Thickness = 2.6;
+
+        private static readonly Typeface Font = new(
+            new FontFamily("Helvetica Neue, Helvetica, Arial, sans-serif"), FontStyle.Normal, FontWeight.Bold);
 
         public override void Render(DrawingContext context)
         {
-            DrawRing(context, new Point(10, 11), five);
-            DrawRing(context, new Point(30, 11), week);
+            DrawRing(context, new Point(11, 11), five);
+            DrawRing(context, new Point(35, 11), week);
         }
 
         private static void DrawRing(DrawingContext context, Point center, double? remaining)
         {
             // Mid grey track: visible on both light and dark menu bars.
-            var track = new Pen(new SolidColorBrush(Color.FromArgb(110, 128, 128, 128)), Thickness);
+            var track = new Pen(new SolidColorBrush(Color.FromArgb(120, 140, 140, 140)), Thickness);
             context.DrawEllipse(null, track, center, Radius, Radius);
+
+            var color = ColorFor(UsageLevels.For(remaining));
+            DrawNumber(context, center, remaining, color);
 
             if (remaining is not { } value)
                 return;
@@ -62,7 +72,7 @@ public static class RingIconRenderer
             if (fraction <= 0.001)
                 return;
 
-            var pen = new Pen(new SolidColorBrush(ColorFor(UsageLevels.For(value))), Thickness, lineCap: PenLineCap.Round);
+            var pen = new Pen(new SolidColorBrush(color), Thickness, lineCap: PenLineCap.Round);
 
             if (fraction >= 0.999)
             {
@@ -84,6 +94,17 @@ public static class RingIconRenderer
             }
 
             context.DrawGeometry(null, pen, geometry);
+        }
+
+        private static void DrawNumber(DrawingContext context, Point center, double? remaining, Color color)
+        {
+            var text = remaining is { } v ? Math.Round(v).ToString("0", CultureInfo.InvariantCulture) : "–";
+            var size = text.Length >= 3 ? 7.0 : 9.0;
+
+            var formatted = new FormattedText(
+                text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Font, size, new SolidColorBrush(color));
+
+            context.DrawText(formatted, new Point(center.X - formatted.Width / 2, center.Y - formatted.Height / 2));
         }
 
         private static Color ColorFor(UsageLevel level) => level switch

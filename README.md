@@ -6,7 +6,7 @@ plenty left, empty means the limit is reached.
 
 ![Preview](docs/preview.svg)
 
-Real renderings of the icon (no data, 68 %/19 %, 100 %/5 %, 0 %/50 % left):
+Real renderings of the icon on a dark and a light menu bar (no data, 68 %/19 %, 100 %/5 %, 0 %/50 %, 94 %/8 % left):
 
 ![Icon states](docs/icon-states.png)
 
