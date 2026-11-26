@@ -8,5 +8,3 @@ obj/
 .DS_Store
 Thumbs.db
 publish/
-usage-snapshot.json
-usage-snapshot.json.tmp

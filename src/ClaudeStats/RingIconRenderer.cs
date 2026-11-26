@@ -16,30 +16,43 @@ public static class RingIconRenderer
     /// <param name="weekRemaining">Remaining percentage (0–100), or null if unknown.</param>
     public static WindowIcon Render(double? fiveHourRemaining, double? weekRemaining)
     {
+        // Encode to PNG and build the icon from that stream. Handing a RenderTargetBitmap directly
+        // to the native tray is less reliable than the regular "icon from image file" path.
+        var stream = new MemoryStream(RenderPng(fiveHourRemaining, weekRemaining));
+        return new WindowIcon(stream);
+    }
+
+    /// <summary>The icon as PNG bytes (80×44 px, i.e. 2x for Retina).</summary>
+    public static byte[] RenderPng(double? fiveHourRemaining, double? weekRemaining)
+    {
         var visual = new RingsVisual(fiveHourRemaining, weekRemaining) { Width = Width, Height = Height };
         visual.Measure(new Size(Width, Height));
         visual.Arrange(new Rect(0, 0, Width, Height));
 
         // 2x for Retina displays; the menu bar scales it down to its height.
-        var bitmap = new RenderTargetBitmap(new PixelSize((int)Width * 2, (int)Height * 2), new Vector(192, 192));
+        using var bitmap = new RenderTargetBitmap(new PixelSize((int)Width * 2, (int)Height * 2), new Vector(192, 192));
         bitmap.Render(visual);
-        return new WindowIcon(bitmap);
+
+        using var png = new MemoryStream();
+        bitmap.Save(png);
+        return png.ToArray();
     }
 
     private sealed class RingsVisual(double? five, double? week) : Control
     {
-        private const double Radius = 8;
+        private const double Radius = 7.5;
         private const double Thickness = 3;
 
         public override void Render(DrawingContext context)
         {
-            DrawRing(context, new Point(11, 11), five);
-            DrawRing(context, new Point(29, 11), week);
+            DrawRing(context, new Point(10, 11), five);
+            DrawRing(context, new Point(30, 11), week);
         }
 
         private static void DrawRing(DrawingContext context, Point center, double? remaining)
         {
-            var track = new Pen(new SolidColorBrush(Color.FromArgb(70, 128, 128, 128)), Thickness);
+            // Mid grey track: visible on both light and dark menu bars.
+            var track = new Pen(new SolidColorBrush(Color.FromArgb(110, 128, 128, 128)), Thickness);
             context.DrawEllipse(null, track, center, Radius, Radius);
 
             if (remaining is not { } value)

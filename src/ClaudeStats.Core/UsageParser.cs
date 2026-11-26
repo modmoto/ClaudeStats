@@ -4,15 +4,13 @@ using System.Text.Json;
 namespace ClaudeStats.Core;
 
 /// <summary>
-/// Reads the JSON that Claude Code passes to the status line
-/// (fields <c>rate_limits.five_hour</c> and <c>rate_limits.seven_day</c>).
+/// Parses the response of <c>GET https://api.anthropic.com/api/oauth/usage</c>:
+/// <c>{"five_hour":{"utilization":12.0,"resets_at":"..."},"seven_day":{...}}</c>.
+/// <c>utilization</c> is a percentage (0–100).
 /// </summary>
 public static class UsageParser
 {
-    /// <returns>
-    /// A snapshot (the windows are null if <c>rate_limits</c> is missing, e.g. before the first API response),
-    /// or null if the text is not a valid JSON object.
-    /// </returns>
+    /// <returns>A snapshot, or null if the text is not a valid JSON object.</returns>
     public static UsageSnapshot? Parse(string json, DateTimeOffset updatedAt)
     {
         try
@@ -22,12 +20,9 @@ public static class UsageParser
             if (root.ValueKind != JsonValueKind.Object)
                 return null;
 
-            if (!root.TryGetProperty("rate_limits", out var limits) || limits.ValueKind != JsonValueKind.Object)
-                return new UsageSnapshot(null, null, updatedAt);
-
             return new UsageSnapshot(
-                ReadWindow(limits, "five_hour"),
-                ReadWindow(limits, "seven_day"),
+                ReadWindow(root, "five_hour"),
+                ReadWindow(root, "seven_day"),
                 updatedAt);
         }
         catch (JsonException)
@@ -36,12 +31,12 @@ public static class UsageParser
         }
     }
 
-    private static RateWindow? ReadWindow(JsonElement limits, string name)
+    private static RateWindow? ReadWindow(JsonElement root, string name)
     {
-        if (!limits.TryGetProperty(name, out var window) || window.ValueKind != JsonValueKind.Object)
+        if (!root.TryGetProperty(name, out var window) || window.ValueKind != JsonValueKind.Object)
             return null;
 
-        if (!window.TryGetProperty("used_percentage", out var used) || used.ValueKind != JsonValueKind.Number)
+        if (!window.TryGetProperty("utilization", out var used) || used.ValueKind != JsonValueKind.Number)
             return null;
 
         DateTimeOffset? resetsAt = null;
@@ -51,8 +46,8 @@ public static class UsageParser
         return new RateWindow(used.GetDouble(), resetsAt);
     }
 
-    // Depending on the version, resets_at is either Unix time (seconds) or an ISO 8601 string.
-    private static DateTimeOffset? ReadTime(JsonElement element)
+    // resets_at is normally an ISO 8601 string; Unix time (seconds or milliseconds) is accepted too.
+    internal static DateTimeOffset? ReadTime(JsonElement element)
     {
         switch (element.ValueKind)
         {

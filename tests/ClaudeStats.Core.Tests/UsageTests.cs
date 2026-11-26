@@ -8,41 +8,38 @@ public class UsageTests
     private static readonly DateTimeOffset Now = new(2026, 11, 26, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void Parses_unix_seconds()
+    public void Parses_api_response()
     {
-        var reset = Now.AddHours(2).ToUnixTimeSeconds();
         var json = """
-            {"rate_limits":{"five_hour":{"used_percentage":32,"resets_at":RESET},
-                            "seven_day":{"used_percentage":81.5,"resets_at":RESET}}}
-            """.Replace("RESET", reset.ToString());
+            {"five_hour":{"utilization":32.0,"resets_at":"2026-11-26T14:00:00.123+00:00"},
+             "seven_day":{"utilization":81.5,"resets_at":"2026-11-30T08:00:00+00:00"},
+             "seven_day_opus":null}
+            """;
 
         var snapshot = UsageParser.Parse(json, Now);
 
         Assert.NotNull(snapshot);
         Assert.Equal(32, snapshot!.FiveHour!.UsedPercentage);
         Assert.Equal(81.5, snapshot.SevenDay!.UsedPercentage);
-        Assert.Equal(Now.AddHours(2), snapshot.FiveHour.ResetsAt);
+        Assert.Equal(new DateTimeOffset(2026, 11, 26, 14, 0, 0, 123, TimeSpan.Zero), snapshot.FiveHour.ResetsAt);
     }
 
     [Fact]
-    public void Parses_iso_timestamp()
+    public void Null_reset_is_allowed()
     {
-        var json = """{"rate_limits":{"five_hour":{"used_percentage":10,"resets_at":"2026-11-26T14:00:00+00:00"}}}""";
+        var snapshot = UsageParser.Parse("""{"five_hour":{"utilization":0,"resets_at":null}}""", Now);
 
-        var snapshot = UsageParser.Parse(json, Now);
-
-        Assert.Equal(Now.AddHours(2), snapshot!.FiveHour!.ResetsAt);
+        Assert.Null(snapshot!.FiveHour!.ResetsAt);
         Assert.Null(snapshot.SevenDay);
     }
 
     [Fact]
-    public void Missing_rate_limits_gives_empty_snapshot()
+    public void Parses_unix_seconds()
     {
-        var snapshot = UsageParser.Parse("""{"model":{"display_name":"x"}}""", Now);
+        var reset = Now.AddHours(2).ToUnixTimeSeconds();
+        var json = """{"five_hour":{"utilization":10,"resets_at":RESET}}""".Replace("RESET", reset.ToString());
 
-        Assert.NotNull(snapshot);
-        Assert.Null(snapshot!.FiveHour);
-        Assert.Null(snapshot.SevenDay);
+        Assert.Equal(Now.AddHours(2), UsageParser.Parse(json, Now)!.FiveHour!.ResetsAt);
     }
 
     [Theory]
