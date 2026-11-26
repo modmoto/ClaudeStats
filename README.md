@@ -42,6 +42,29 @@ Claude Code ──Statusline-JSON──▶ statusline-save.sh ──▶ ~/.claud
   lokal und steht in der `.gitignore`.
 - Ein Tageslimit gibt es in diesen Daten nicht, daher nur 5 Stunden und Woche.
 
+## Installieren (macOS)
+
+**Variante A: selbst bauen (empfohlen, keine Gatekeeper-Warnung).** Voraussetzung: .NET 11 SDK.
+
+```bash
+git clone https://github.com/modmoto/ClaudeStats.git
+cd ClaudeStats
+scripts/package-macos.sh            # wählt die Architektur deines Macs
+cp -R publish/*/ClaudeStats.app /Applications/
+open /Applications/ClaudeStats.app
+```
+
+**Variante B: fertiges Paket aus den [Releases](https://github.com/modmoto/ClaudeStats/releases).**
+Das Zip passend zu deinem Mac laden (`osx-arm64` = Apple Silicon, `osx-x64` = Intel), entpacken und
+nach `/Applications` ziehen. Die App ist nicht von Apple beglaubigt. macOS blockiert sie deshalb
+beim ersten Start; einmalig freigeben mit:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/ClaudeStats.app
+```
+
+Die App läuft ohne Dock-Icon, du findest sie nur oben in der Menüleiste. Beenden über ihr Menü.
+
 ## Einrichten
 
 1. Skript ausführbar machen (macOS/Linux):
