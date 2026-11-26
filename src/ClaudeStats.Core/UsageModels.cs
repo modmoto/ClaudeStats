@@ -1,25 +1,25 @@
 namespace ClaudeStats.Core;
 
-/// <summary>Ein Limit-Fenster (5 Stunden oder 7 Tage) so, wie Claude Code es meldet.</summary>
+/// <summary>One limit window (5 hours or 7 days) as reported by Claude Code.</summary>
 public sealed record RateWindow(double UsedPercentage, DateTimeOffset? ResetsAt)
 {
-    /// <summary>True, wenn der Reset-Zeitpunkt seit dem letzten Snapshot bereits verstrichen ist.</summary>
+    /// <summary>True if the reset time has already passed since the last snapshot.</summary>
     public bool HasReset(DateTimeOffset now) => ResetsAt is { } r && r <= now;
 
     /// <summary>
-    /// Verbleibendes Kontingent in Prozent (100 = voll). Ist der Reset-Zeitpunkt schon vorbei,
-    /// wird angenommen, dass das Fenster wieder voll ist.
+    /// Remaining quota in percent (100 = full). If the reset time has already passed,
+    /// the window is assumed to be full again.
     /// </summary>
     public double RemainingPercentage(DateTimeOffset now) =>
         HasReset(now) ? 100 : Math.Clamp(100 - UsedPercentage, 0, 100);
 
-    /// <summary>Zeit bis zum nächsten Reset, oder null wenn unbekannt bzw. bereits vorbei.</summary>
+    /// <summary>Time until the next reset, or null if unknown or already passed.</summary>
     public TimeSpan? TimeUntilReset(DateTimeOffset now) =>
         ResetsAt is { } r && r > now ? r - now : null;
 }
 
-/// <summary>Letzter bekannter Stand der Limits.</summary>
-/// <param name="UpdatedAt">Zeitpunkt, zu dem Claude Code die Daten zuletzt geschrieben hat.</param>
+/// <summary>Last known state of the limits.</summary>
+/// <param name="UpdatedAt">When Claude Code last wrote the data.</param>
 public sealed record UsageSnapshot(RateWindow? FiveHour, RateWindow? SevenDay, DateTimeOffset UpdatedAt);
 
 public enum UsageLevel
@@ -32,7 +32,7 @@ public enum UsageLevel
 
 public static class UsageLevels
 {
-    /// <summary>Grün ab 30 % Rest, Gelb ab 10 %, darunter Rot.</summary>
+    /// <summary>Green from 30 % remaining, yellow from 10 %, red below that.</summary>
     public static UsageLevel For(double? remainingPercentage) => remainingPercentage switch
     {
         null => UsageLevel.Unknown,

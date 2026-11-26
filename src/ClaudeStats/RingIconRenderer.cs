@@ -6,21 +6,21 @@ using ClaudeStats.Core;
 
 namespace ClaudeStats;
 
-/// <summary>Zeichnet das Tray-Icon: links 5-Stunden-Ring, rechts Wochen-Ring.</summary>
+/// <summary>Draws the tray icon: 5-hour ring on the left, weekly ring on the right.</summary>
 public static class RingIconRenderer
 {
     private const double Width = 40;
     private const double Height = 22;
 
-    /// <param name="fiveHourRemaining">Rest in Prozent (0–100) oder null, wenn unbekannt.</param>
-    /// <param name="weekRemaining">Rest in Prozent (0–100) oder null, wenn unbekannt.</param>
+    /// <param name="fiveHourRemaining">Remaining percentage (0–100), or null if unknown.</param>
+    /// <param name="weekRemaining">Remaining percentage (0–100), or null if unknown.</param>
     public static WindowIcon Render(double? fiveHourRemaining, double? weekRemaining)
     {
         var visual = new RingsVisual(fiveHourRemaining, weekRemaining) { Width = Width, Height = Height };
         visual.Measure(new Size(Width, Height));
         visual.Arrange(new Rect(0, 0, Width, Height));
 
-        // 2x für Retina-Displays; die Menüleiste skaliert auf Höhe herunter.
+        // 2x for Retina displays; the menu bar scales it down to its height.
         var bitmap = new RenderTargetBitmap(new PixelSize((int)Width * 2, (int)Height * 2), new Vector(192, 192));
         bitmap.Render(visual);
         return new WindowIcon(bitmap);
@@ -57,7 +57,7 @@ public static class RingIconRenderer
                 return;
             }
 
-            // Start oben (12 Uhr), im Uhrzeigersinn; die Länge ist der verbleibende Anteil.
+            // Start at the top (12 o'clock), clockwise; the arc length is the remaining share.
             var angle = fraction * 2 * Math.PI;
             var start = new Point(center.X, center.Y - Radius);
             var end = new Point(center.X + Radius * Math.Sin(angle), center.Y - Radius * Math.Cos(angle));

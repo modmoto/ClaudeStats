@@ -1,13 +1,13 @@
 namespace ClaudeStats.Core;
 
-/// <summary>Findet und liest die von der Statusline geschriebene Snapshot-Datei.</summary>
+/// <summary>Locates and reads the snapshot file written by the status line script.</summary>
 public static class UsageFile
 {
     public const string FileName = "usage-snapshot.json";
 
     /// <summary>
-    /// <c>~/.claude/usage-snapshot.json</c> bzw. unter Windows <c>%USERPROFILE%\.claude\usage-snapshot.json</c>.
-    /// Respektiert <c>CLAUDE_CONFIG_DIR</c>.
+    /// <c>~/.claude/usage-snapshot.json</c>, or <c>%USERPROFILE%\.claude\usage-snapshot.json</c> on Windows.
+    /// Honors <c>CLAUDE_CONFIG_DIR</c>.
     /// </summary>
     public static string DefaultPath()
     {
@@ -17,7 +17,7 @@ public static class UsageFile
         return Path.Combine(configDir, FileName);
     }
 
-    /// <returns>Den Snapshot, oder null wenn die Datei fehlt, gerade ersetzt wird oder kein gültiges JSON enthält.</returns>
+    /// <returns>The snapshot, or null if the file is missing, being replaced right now, or not valid JSON.</returns>
     public static UsageSnapshot? Load(string? path = null)
     {
         path ??= DefaultPath();
@@ -31,7 +31,7 @@ public static class UsageFile
         }
         catch (IOException)
         {
-            return null; // Skript schreibt gerade; beim nächsten Tick erneut versuchen.
+            return null; // The script is writing right now; try again on the next tick.
         }
         catch (UnauthorizedAccessException)
         {

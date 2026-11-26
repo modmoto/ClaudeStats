@@ -4,14 +4,14 @@ using System.Text.Json;
 namespace ClaudeStats.Core;
 
 /// <summary>
-/// Liest das JSON, das Claude Code an die Statusline übergibt
-/// (Felder <c>rate_limits.five_hour</c> und <c>rate_limits.seven_day</c>).
+/// Reads the JSON that Claude Code passes to the status line
+/// (fields <c>rate_limits.five_hour</c> and <c>rate_limits.seven_day</c>).
 /// </summary>
 public static class UsageParser
 {
     /// <returns>
-    /// Einen Snapshot (die Fenster sind null, wenn <c>rate_limits</c> fehlt, z. B. vor der ersten API-Antwort)
-    /// oder null, wenn der Text kein gültiges JSON-Objekt ist.
+    /// A snapshot (the windows are null if <c>rate_limits</c> is missing, e.g. before the first API response),
+    /// or null if the text is not a valid JSON object.
     /// </returns>
     public static UsageSnapshot? Parse(string json, DateTimeOffset updatedAt)
     {
@@ -51,7 +51,7 @@ public static class UsageParser
         return new RateWindow(used.GetDouble(), resetsAt);
     }
 
-    // resets_at kommt je nach Version als Unix-Zeit (Sekunden) oder als ISO-8601-Text.
+    // Depending on the version, resets_at is either Unix time (seconds) or an ISO 8601 string.
     private static DateTimeOffset? ReadTime(JsonElement element)
     {
         switch (element.ValueKind)

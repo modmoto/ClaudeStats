@@ -21,7 +21,7 @@ public class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // Kein Hauptfenster: die App lebt nur in der Menüleiste / im Tray.
+            // No main window: the app lives only in the menu bar / tray.
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
             _tray = new TrayIcon { IsVisible = true };
@@ -42,7 +42,7 @@ public class App : Application
         if (_tray is null)
             return;
 
-        // Schlägt das Lesen fehl (Datei wird gerade ersetzt), bleibt der letzte Stand erhalten.
+        // If reading fails (file is being replaced right now), keep the last known state.
         _snapshot = UsageFile.Load() ?? _snapshot;
 
         var now = DateTimeOffset.Now;

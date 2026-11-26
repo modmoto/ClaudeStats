@@ -1,11 +1,11 @@
 namespace ClaudeStats.Core;
 
-/// <summary>Deutsche Texte für Menü und Tooltip.</summary>
+/// <summary>German UI strings for the menu and tooltip.</summary>
 public static class UsageFormatter
 {
     public static string Percent(double value) => $"{Math.Round(value):0} %";
 
-    /// <summary>"3 T 4 Std", "2 Std 14 Min" oder "12 Min".</summary>
+    /// <summary>"3 T 4 Std", "2 Std 14 Min" or "12 Min".</summary>
     public static string Countdown(TimeSpan span)
     {
         if (span.TotalDays >= 1)
@@ -24,7 +24,7 @@ public static class UsageFormatter
         return $"vor {(int)span.TotalDays} T";
     }
 
-    /// <summary>Eine Menüzeile, z. B. "5-Stunden-Limit: 68 % übrig · Reset in 2 Std 14 Min".</summary>
+    /// <summary>One menu line, e.g. "5-Stunden-Limit: 68 % übrig · Reset in 2 Std 14 Min".</summary>
     public static string Line(string label, RateWindow? window, DateTimeOffset now)
     {
         if (window is null)

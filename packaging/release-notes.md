@@ -1,17 +1,17 @@
-Menüleisten-Anzeige für dein Claude-Nutzungslimit: zwei Ringe für das 5-Stunden- und das Wochenlimit.
+Menu bar indicator for your Claude usage limits: two rings for the 5-hour and the weekly limit.
 
-## Welches Paket?
-- `osx-arm64`: Macs mit Apple Silicon (M1 und neuer)
-- `osx-x64`: Intel-Macs
+## Which package?
+- `osx-arm64`: Macs with Apple Silicon (M1 and newer)
+- `osx-x64`: Intel Macs
 
-## Installieren
-1. Zip entpacken, `ClaudeStats.app` nach `/Applications` ziehen.
-2. Die App ist nicht von Apple beglaubigt. Einmalig freigeben:
+## Install
+1. Unzip and drag `ClaudeStats.app` to `/Applications`.
+2. The app is not notarized by Apple. Allow it once:
    ```bash
    xattr -dr com.apple.quarantine /Applications/ClaudeStats.app
    ```
-3. Statusline einrichten (siehe [README](https://github.com/modmoto/ClaudeStats#einrichten)), Claude Code starten, App öffnen.
+3. Set up the status line (see the [README](https://github.com/modmoto/ClaudeStats#setup)), start Claude Code, open the app.
 
-Alternativ selbst bauen mit `scripts/package-macos.sh`, dann entfällt Schritt 2.
+Alternatively, build it yourself with `scripts/package-macos.sh`; then step 2 is not needed.
 
-Prüfsummen der Dateien stehen in `SHA256SUMS.txt`.
+Checksums of the files are in `SHA256SUMS.txt`.

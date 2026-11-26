@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Baut ClaudeStats.app (macOS, ohne Dock-Icon) und packt sie als Zip.
+# Builds ClaudeStats.app (macOS, no Dock icon) and packs it as a zip.
 #
-# Aufruf:   scripts/package-macos.sh [osx-arm64|osx-x64] [version]
-# Ergebnis: publish/<rid>/ClaudeStats.app und publish/<rid>/ClaudeStats-<version>-<rid>.zip
+# Usage:  scripts/package-macos.sh [osx-arm64|osx-x64] [version]
+# Output: publish/<rid>/ClaudeStats.app and publish/<rid>/ClaudeStats-<version>-<rid>.zip
 #
-# Ohne Argument wird die Architektur dieses Rechners gewählt.
+# Without arguments, the architecture of this machine is used.
 set -euo pipefail
 
 if [ "${1:-}" ]; then
@@ -32,7 +32,7 @@ cp -R "$OUT/bin/." "$APP/Contents/MacOS/"
 sed "s/__VERSION__/$VERSION/g" "$ROOT/packaging/macos/Info.plist" > "$APP/Contents/Info.plist"
 chmod +x "$APP/Contents/MacOS/ClaudeStats"
 
-# Auf dem Mac selbst: ad-hoc signieren, sonst verweigern Apple-Silicon-Macs den Start.
+# On a Mac: ad-hoc sign, otherwise Apple Silicon Macs refuse to launch the app.
 if command -v codesign >/dev/null 2>&1; then
   codesign --force --deep -s - "$APP"
 fi
@@ -41,6 +41,6 @@ rm -rf "$OUT/bin"
 ( cd "$OUT" && zip -qry "ClaudeStats-$VERSION-$RID.zip" ClaudeStats.app )
 
 echo
-echo "Fertig: $APP"
-echo "Zip:    $OUT/ClaudeStats-$VERSION-$RID.zip"
-echo "Installieren: cp -R \"$APP\" /Applications/"
+echo "Done:  $APP"
+echo "Zip:   $OUT/ClaudeStats-$VERSION-$RID.zip"
+echo "Install: cp -R \"$APP\" /Applications/"

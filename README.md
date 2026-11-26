@@ -1,82 +1,82 @@
 # ClaudeStats
 
-Menüleisten- bzw. Tray-Anzeige für dein **Claude-Nutzungslimit**. Zwei Ringe zeigen, wie viel
-vom **5-Stunden-Limit** und vom **Wochenlimit** noch übrig ist. Sie zählen runter: voll heißt
-viel übrig, leer heißt Limit erreicht.
+A menu bar / tray indicator for your **Claude usage limits**. Two rings show how much of your
+**5-hour limit** and your **weekly limit** is left. They count down: full means plenty left,
+empty means the limit is reached.
 
-![Vorschau](docs/preview.svg)
+![Preview](docs/preview.svg)
 
-> **Status:** frühe Version. Gebaut mit [Avalonia UI](https://avaloniaui.net/) (C#/.NET 11),
-> zuerst für macOS, der Code ist so aufgebaut, dass Windows nur kleine Ergänzungen braucht.
-> Das Bild oben ist ein Mockup, ein echter Screenshot folgt.
+> **Status:** early version. Built with [Avalonia UI](https://avaloniaui.net/) (C#/.NET 11),
+> macOS first; the code is structured so that Windows only needs small additions.
+> The image above is a mockup, a real screenshot will follow. The app's menu texts are
+> currently in German.
 
-## So funktioniert es
+## How it works
 
-ClaudeStats braucht weder Login noch Netzwerk. Claude Code übergibt seiner Statusline bei jedem
-Update ein JSON, das unter `rate_limits` genau die Werte enthält, die auch `/usage` zeigt:
+ClaudeStats needs no login and no network access. On every update, Claude Code passes a JSON
+document to its status line. Under `rate_limits` it contains exactly the values that `/usage` shows:
 
-| Feld                                  | Bedeutung                       |
-|---------------------------------------|---------------------------------|
-| `rate_limits.five_hour.used_percentage` | Verbrauch im 5-Stunden-Fenster  |
-| `rate_limits.five_hour.resets_at`       | Reset des 5-Stunden-Fensters    |
-| `rate_limits.seven_day.used_percentage` | Verbrauch im Wochenfenster      |
-| `rate_limits.seven_day.resets_at`       | Reset des Wochenfensters        |
+| Field                                   | Meaning                         |
+|-----------------------------------------|---------------------------------|
+| `rate_limits.five_hour.used_percentage` | Usage in the 5-hour window      |
+| `rate_limits.five_hour.resets_at`       | Reset of the 5-hour window      |
+| `rate_limits.seven_day.used_percentage` | Usage in the weekly window      |
+| `rate_limits.seven_day.resets_at`       | Reset of the weekly window      |
 
-Ein kleines Skript (`scripts/statusline-save.sh` bzw. `.ps1`) legt dieses JSON als
-`~/.claude/usage-snapshot.json` ab. Die App liest die Datei alle 10 Sekunden und rechnet
-`100 − Verbrauch` in den Rest um.
+A small script (`scripts/statusline-save.sh` or `.ps1`) stores this JSON as
+`~/.claude/usage-snapshot.json`. The app reads that file every 10 seconds and converts
+`100 − usage` into the remaining share.
 
 ```
-Claude Code ──Statusline-JSON──▶ statusline-save.sh ──▶ ~/.claude/usage-snapshot.json ──▶ ClaudeStats (Ringe)
+Claude Code ──status line JSON──▶ statusline-save.sh ──▶ ~/.claude/usage-snapshot.json ──▶ ClaudeStats (rings)
 ```
 
-### Wichtig zu wissen
+### Good to know
 
-- Die Werte gibt es nur für **Pro/Max-Abos** und erst **nach der ersten Antwort** in einer
-  Claude-Code-Sitzung.
-- Die Daten aktualisieren sich nur, **solange Claude Code läuft**. Arbeitest du gerade nur in der
-  Claude-App oder auf claude.ai, bleibt die Anzeige auf dem letzten Stand. Das Menü zeigt, wie alt
-  der Wert ist („Stand: vor 12 Min“).
-- Ist der gespeicherte Reset-Zeitpunkt schon vorbei, zeigt die App das Fenster als wieder voll.
-- Die Snapshot-Datei enthält das komplette Statusline-JSON (u. a. Arbeitsverzeichnis). Sie bleibt
-  lokal und steht in der `.gitignore`.
-- Ein Tageslimit gibt es in diesen Daten nicht, daher nur 5 Stunden und Woche.
+- The values exist only for **Pro/Max plans** and only **after the first response** in a
+  Claude Code session.
+- The data updates only **while Claude Code is running**. If you are only using the Claude app or
+  claude.ai, the display stays at its last value. The menu shows how old the value is.
+- If the stored reset time has already passed, the app shows that window as full again.
+- The snapshot file contains the complete status line JSON (including the working directory).
+  It stays local and is listed in `.gitignore`.
+- There is no daily limit in this data, so there are only two rings: 5 hours and week.
 
-## Installieren (macOS)
+## Install (macOS)
 
-**Variante A: selbst bauen (empfohlen, keine Gatekeeper-Warnung).** Voraussetzung: .NET 11 SDK.
+**Option A: build it yourself (recommended, no Gatekeeper warning).** Requires the .NET 11 SDK.
 
 ```bash
 git clone https://github.com/modmoto/ClaudeStats.git
 cd ClaudeStats
-scripts/package-macos.sh            # wählt die Architektur deines Macs
+scripts/package-macos.sh            # picks the architecture of your Mac
 cp -R publish/*/ClaudeStats.app /Applications/
 open /Applications/ClaudeStats.app
 ```
 
-**Variante B: fertiges Paket aus den [Releases](https://github.com/modmoto/ClaudeStats/releases).**
-Das Zip passend zu deinem Mac laden (`osx-arm64` = Apple Silicon, `osx-x64` = Intel), entpacken und
-nach `/Applications` ziehen. Die App ist nicht von Apple beglaubigt. macOS blockiert sie deshalb
-beim ersten Start; einmalig freigeben mit:
+**Option B: prebuilt package from [Releases](https://github.com/modmoto/ClaudeStats/releases).**
+Download the zip that matches your Mac (`osx-arm64` = Apple Silicon, `osx-x64` = Intel), unzip it
+and drag the app to `/Applications`. The app is not notarized by Apple, so macOS blocks it on
+first launch. Allow it once with:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/ClaudeStats.app
 ```
 
-Die App läuft ohne Dock-Icon, du findest sie nur oben in der Menüleiste. Beenden über ihr Menü.
+The app runs without a Dock icon; you will only find it in the menu bar. Quit it from its menu.
 
-## Einrichten
+## Setup
 
-1. Skript ausführbar machen (macOS/Linux):
+1. Make the script executable (macOS/Linux):
    ```bash
    chmod +x scripts/statusline-save.sh
    ```
-2. In `~/.claude/settings.json` (Windows: `%USERPROFILE%\.claude\settings.json`) eintragen:
+2. Add it to `~/.claude/settings.json` (Windows: `%USERPROFILE%\.claude\settings.json`):
    ```json
    {
      "statusLine": {
        "type": "command",
-       "command": "/ABSOLUTER/PFAD/zu/ClaudeStats/scripts/statusline-save.sh"
+       "command": "/ABSOLUTE/PATH/TO/ClaudeStats/scripts/statusline-save.sh"
      }
    }
    ```
@@ -85,57 +85,56 @@ Die App läuft ohne Dock-Icon, du findest sie nur oben in der Menüleiste. Beend
    {
      "statusLine": {
        "type": "command",
-       "command": "powershell -NoProfile -ExecutionPolicy Bypass -File C:\\PFAD\\ClaudeStats\\scripts\\statusline-save.ps1"
+       "command": "powershell -NoProfile -ExecutionPolicy Bypass -File C:\\PATH\\ClaudeStats\\scripts\\statusline-save.ps1"
      }
    }
    ```
-   Hast du schon eine eigene Statusline, setze `CLAUDE_STATS_CHAIN` auf deren Pfad
-   (nur `.sh`), dann wird sie nach dem Speichern weiter ausgeführt.
-3. Claude Code neu starten und eine Nachricht schicken.
-4. App starten:
+   If you already have a status line of your own, set `CLAUDE_STATS_CHAIN` to its path
+   (`.sh` only); it is then run after the snapshot is saved.
+3. Restart Claude Code and send a message.
+4. Start the app:
    ```bash
    dotnet run --project src/ClaudeStats
    ```
 
-## Entwickeln
+## Develop
 
-Voraussetzung: .NET 11 SDK, z. B. mit JetBrains Rider.
+Requirements: .NET 11 SDK, e.g. with JetBrains Rider.
 
 ```bash
 dotnet build ClaudeStats.sln
 dotnet test tests/ClaudeStats.Core.Tests
 ```
 
-| Projekt                         | Inhalt                                                          |
+| Project                         | Contents                                                        |
 |---------------------------------|-----------------------------------------------------------------|
-| `src/ClaudeStats.Core`          | JSON lesen, Prozent/Reset rechnen, Texte. Keine UI, plattformunabhängig |
-| `src/ClaudeStats`               | Avalonia-App: Tray-Icon, Ringe zeichnen, Menü                   |
-| `tests/ClaudeStats.Core.Tests`  | Unit-Tests für die Kernlogik                                    |
-| `scripts/`                      | Statusline-Skripte für macOS/Linux und Windows                  |
+| `src/ClaudeStats.Core`          | Read JSON, compute percentages/resets, texts. No UI, platform independent |
+| `src/ClaudeStats`               | Avalonia app: tray icon, ring drawing, menu                     |
+| `tests/ClaudeStats.Core.Tests`  | Unit tests for the core logic                                   |
+| `scripts/`                      | Status line scripts for macOS/Linux and Windows, macOS packaging |
 
-Die Logik steckt bewusst im Core-Projekt. Für Windows muss die App nur ergänzt werden (Autostart,
-Tray-Details), die Berechnung bleibt identisch. Eine GitHub-Action baut auf macOS und Windows.
+The logic deliberately lives in the Core project. For Windows, only the app needs additions
+(autostart, tray details); the calculation stays the same. A GitHub Action builds on macOS and Windows.
 
-## Release veröffentlichen
+## Publish a release
 
-Die Pipeline `.github/workflows/release.yml` testet, baut `ClaudeStats.app` für Apple Silicon und
-Intel auf einem macOS-Runner und legt das GitHub-Release mit beiden Zips und Prüfsummen an.
-Versionen unter 1.0 werden automatisch als Vorabversion markiert.
+The `.github/workflows/release.yml` pipeline runs the tests, builds `ClaudeStats.app` for Apple
+Silicon and Intel on macOS runners, and creates the GitHub release with both zips and checksums.
+Versions below 1.0 are automatically marked as pre-releases.
 
 ```bash
 git tag v0.1.0
 git push origin v0.1.0
 ```
 
-Alternativ auf GitHub unter **Actions → release → Run workflow** den Tag eintragen.
+Alternatively, go to **Actions → release → Run workflow** on GitHub and enter the tag.
 
 ## Roadmap
 
-- [ ] Erster echter Lauf auf macOS, Screenshot ins README
-- [ ] Prozentzahl direkt neben bzw. in den Ringen
-- [ ] Popover-Fenster statt reinem Menü
-- [ ] Dock-Icon ausblenden (`LSUIElement`) und `.app`-Paket
-- [ ] Autostart (macOS und Windows)
-- [ ] Windows-Test und Installer
-- [ ] Einrichtungsassistent, der die `settings.json` selbst ergänzt
-- [ ] Release mit fertigen Downloads
+- [ ] First real run on macOS, add a screenshot to the README
+- [ ] Percentage number next to or inside the rings
+- [ ] Popover window instead of a plain menu
+- [ ] Autostart (macOS and Windows)
+- [ ] Windows test and installer
+- [ ] Setup assistant that edits `settings.json` itself
+- [ ] English UI texts

@@ -1,8 +1,8 @@
 name: release
 
-# Release anlegen:
+# Create a release:
 #   git tag v0.1.0 && git push origin v0.1.0
-# oder auf GitHub: Actions -> release -> Run workflow (Tag-Name eingeben).
+# or on GitHub: Actions -> release -> Run workflow (enter the tag name).
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Tag für das Release, z. B. v0.1.0'
+        description: 'Tag for the release, e.g. v0.1.0'
         required: true
         default: 'v0.1.0'
 
@@ -41,7 +41,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 11.0.x
-      - name: App-Bundle bauen
+      - name: Build app bundle
         run: |
           VERSION="${TAG#v}"
           scripts/package-macos.sh "${{ matrix.rid }}" "$VERSION"
@@ -66,11 +66,11 @@ jobs:
           pattern: ClaudeStats-*
           merge-multiple: true
           path: dist
-      - name: Prüfsummen
+      - name: Checksums
         run: cd dist && sha256sum ClaudeStats-*.zip > SHA256SUMS.txt && cat SHA256SUMS.txt
-      - name: Release erstellen
+      - name: Create release
         run: |
-          # Versionen unter 1.0 gelten als Vorabversion.
+          # Versions below 1.0 are marked as pre-releases.
           PRERELEASE=""
           case "${TAG#v}" in 0.*|*-*) PRERELEASE="--prerelease" ;; esac
 
